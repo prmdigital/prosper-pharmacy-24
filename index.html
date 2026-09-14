@@ -1736,6 +1736,7 @@ function renderPage(key){
     if (!src){ toPhoto(); }
     else {
       v.addEventListener('error', toPhoto);
+      v.addEventListener('loadeddata', function(){ if (v.paused && !document.hidden){ var q = v.play(); if (q && q.catch) q.catch(function(){}); } });
       v.src = src;
       var pr = v.play && v.play();
       if (pr && pr.catch) pr.catch(function(){ /* autoplay blocked: poster stays visible */ });
@@ -1959,6 +1960,23 @@ function mountBandGlobe(root){
   }
   loop();
 }
+
+
+/* Resume on-screen clips when the tab returns to the foreground: browsers pause
+   media in background tabs and do not always restart autoplay afterwards. */
+function resumeVisibleClips(){
+  if (document.hidden) return;
+  var vh = window.innerHeight || document.documentElement.clientHeight;
+  document.querySelectorAll('#view video').forEach(function(v){
+    var r = v.getBoundingClientRect();
+    if (r.bottom > 0 && r.top < vh && v.paused && v.readyState >= 2){
+      var p = v.play(); if (p && p.catch) p.catch(function(){});
+    }
+  });
+}
+document.addEventListener('visibilitychange', resumeVisibleClips);
+window.addEventListener('focus', resumeVisibleClips);
+window.addEventListener('pageshow', resumeVisibleClips);
 
 function go(key, push){
   if (!P[key]) key = 'home';
